@@ -96,7 +96,13 @@ function Page() {
             {source != null && <Markdown source={source} {...article} />}
           </div>
         ) : (
-          <Splash supported={f.supported} pending={f.pending} onOpen={() => f.open()} onResume={f.resume} />
+          <Splash
+            supported={f.supported}
+            pending={f.pending}
+            onOpen={() => f.open()}
+            onChooseRoot={() => f.chooseRoot()}
+            onResume={f.resume}
+          />
         )}
       </main>
     </div>

@@ -1,4 +1,4 @@
-import { FolderOpen, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react'
+import { FolderOpen, FolderTree, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 
 const FEATURES = [
@@ -8,19 +8,36 @@ const FEATURES = [
 ]
 
 /** Empty state: what localmd does, and the one button that starts it. */
-type Props = { supported: boolean | null; pending: string | null; onOpen: () => void; onResume: () => void }
+type Props = {
+  supported: boolean | null
+  pending: string | null
+  onOpen: () => void
+  onChooseRoot: () => void
+  onResume: () => void
+}
 
-export function Splash({ supported, pending, onOpen, onResume }: Props) {
+export function Splash({ supported, pending, onOpen, onChooseRoot, onResume }: Props) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center px-6 py-20 text-center lg:py-32">
       <h1 className="font-title text-5xl font-bold tracking-wide uppercase lg:text-6xl">localmd</h1>
       <p className="mt-4 max-w-md text-lg text-muted-foreground">
         Open a Markdown file from your machine<br />and see it rendered as you write.
       </p>
-      <Button size="lg" className="mt-8" onClick={onOpen} disabled={supported === false}>
-        <FolderOpen />
-        Open file…
-      </Button>
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Button size="lg" onClick={onOpen} disabled={supported === false}>
+          <FolderOpen />
+          Open file…
+        </Button>
+        <Button
+          size="lg"
+          onClick={onChooseRoot}
+          disabled={supported === false}
+          title="Enables folder listings, breadcrumbs and relative links"
+        >
+          <FolderTree />
+          Set root folder…
+        </Button>
+      </div>
       {pending && (
         <Button variant="outline" className="mt-3 max-w-full" onClick={onResume} title="Asks for read permission again">
           Continue with <span className="truncate font-mono text-xs">{pending}</span>

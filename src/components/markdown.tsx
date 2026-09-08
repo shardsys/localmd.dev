@@ -2,6 +2,7 @@ import type { Element } from 'hast'
 import { toText } from 'hast-util-to-text'
 import { useEffect, useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { defaultUrlTransform } from 'react-markdown'
 import type { Components } from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeKatex from 'rehype-katex'
@@ -19,8 +20,10 @@ import { Mermaid } from '#/components/mermaid'
 import { cn } from '#/lib/utils'
 
 // Default schema keeps `language-*` on <code>; also keep math-* (for rehype-katex) and hljs classes.
+// Images may also be data: URIs (embedded images); the default allows only http(s).
 const schema = {
   ...defaultSchema,
+  protocols: { ...defaultSchema.protocols, src: [...(defaultSchema.protocols?.src ?? []), 'data'] },
   attributes: {
     ...defaultSchema.attributes,
     code: [...(defaultSchema.attributes?.code ?? []), ['className', /^(language-|math-|hljs)/]],
@@ -30,6 +33,15 @@ const schema = {
 }
 
 const remarkPlugins: PluggableList = [remarkGfm, remarkMath]
+
+// react-markdown drops data: URLs; keep inline images (the sanitizer still checks other protocols)
+const urlTransform = (url: string) => (/^data:image\//i.test(url) ? url : defaultUrlTransform(url))
+
+/** GitHub "blob" pages are HTML, not the file; point images at the raw file as GitHub itself does. */
+function rawImageUrl(src: string): string {
+  const m = /^https?:\/\/github\.com\/([^/]+\/[^/]+)\/blob\/([^?#]+)/i.exec(src)
+  return m ? `https://raw.githubusercontent.com/${m[1]}/${m[2]}` : src
+}
 
 type Languages = Record<string, LanguageFn>
 let allLanguages: Languages | null = null
@@ -126,7 +138,9 @@ function useComponents({ onLink, resolveUrl }: Nav): Components {
         )
       },
       img({ node, src = '', ...props }) {
-        if (isExternalHref(src) || src.startsWith('data:') || !resolveUrl) return <img src={src} {...props} />
+        // no referrer: hotlink-protected hosts refuse images otherwise
+        if (isExternalHref(src) || !resolveUrl)
+          return <img src={rawImageUrl(src)} referrerPolicy="no-referrer" {...props} />
         return <LocalImage src={src} resolve={resolveUrl} {...props} />
       },
     }),
@@ -144,7 +158,12 @@ export function Markdown({ source, className, style, onLink, resolveUrl }: Props
   )
   return (
     <article className={cn('prose prose-neutral dark:prose-invert mt-6 max-w-none', className)} style={style}>
-      <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins} components={components}>
+      <ReactMarkdown
+        remarkPlugins={remarkPlugins}
+        rehypePlugins={rehypePlugins}
+        components={components}
+        urlTransform={urlTransform}
+      >
         {source}
       </ReactMarkdown>
     </article>

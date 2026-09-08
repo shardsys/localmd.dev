@@ -61,11 +61,13 @@ export function Sidebar(p: Props) {
               collapsed && 'opacity-0',
             )}
           >
-            <Button className="justify-start" onClick={p.onOpen} disabled={p.supported === false}>
-              <FolderOpen />
-              Open file…
-            </Button>
-            <RootFolder {...p} />
+            <div className="flex flex-col gap-1.5">
+              <Button className="justify-start" onClick={p.onOpen} disabled={p.supported === false}>
+                <FolderOpen />
+                Open file…
+              </Button>
+              <RootFolder {...p} />
+            </div>
             <Status {...p} />
             {p.history.length > 0 && (
               <>
@@ -96,38 +98,29 @@ function RootFolder(p: Props) {
   if (p.supported === false) return null
   if (!p.rootName)
     return (
-      <Button
-        variant="outline"
-        className="justify-start"
-        onClick={p.onChooseRoot}
-        title="Enables folder listings, breadcrumbs and relative links"
-      >
+      <Button className="justify-start" onClick={p.onChooseRoot} title="Enables folder listings, breadcrumbs and relative links">
         <FolderTree />
         Set root folder…
       </Button>
     )
+  // styled like the button above (same colors, height and padding); icon actions sit inside it
+  const action = 'size-7 text-primary-foreground/70 hover:bg-primary-foreground/15 hover:text-primary-foreground'
   return (
-    <div className="flex items-center gap-1 text-sm">
+    <div className="flex h-9 items-center gap-0.5 rounded-md bg-primary pr-1 text-sm font-medium text-primary-foreground">
       <button
         type="button"
         onClick={p.onOpenRoot}
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 hover:bg-muted"
+        className="flex h-full min-w-0 flex-1 items-center gap-2 rounded-md px-3 outline-none hover:bg-primary-foreground/10 focus-visible:bg-primary-foreground/10"
         title="Browse the root folder"
       >
-        <FolderTree className="size-4 shrink-0 text-muted-foreground" />
+        <FolderTree className="size-4 shrink-0" />
         <span className="truncate">{p.rootName}</span>
       </button>
-      <Button variant="ghost" size="icon-sm" onClick={p.onChooseRoot} title="Change root folder">
-        <Pencil className="size-3.5" />
+      <Button variant="ghost" size="icon-sm" className={action} onClick={p.onChooseRoot} title="Change root folder">
+        <Pencil className="size-4" />
       </Button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="text-muted-foreground"
-        onClick={p.onClearRoot}
-        title="Clear root folder"
-      >
-        <X className="size-3.5" />
+      <Button variant="ghost" size="icon-sm" className={action} onClick={p.onClearRoot} title="Clear root folder">
+        <X className="size-4" />
       </Button>
     </div>
   )
