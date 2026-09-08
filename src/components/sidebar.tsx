@@ -1,4 +1,4 @@
-import { FileText, FolderOpen, FolderTree, Minus, Pencil, Plus, X } from 'lucide-react'
+import { FolderOpen, FolderTree, Minus, Pencil, Plus, Star, X } from 'lucide-react'
 import { useState } from 'react'
 import { useFlip } from '#/hooks/use-flip'
 import { SettingsMenu } from '#/components/settings-menu'
@@ -17,12 +17,14 @@ type Props = {
   history: HistoryEntry[]
   activeId: number | null
   settings: Settings
+  onHome: () => void
   onOpen: () => void
   onOpenRoot: () => void
   onChooseRoot: () => void
   onClearRoot: () => void
   onOpenEntry: (e: HistoryEntry) => void
   onRemoveEntry: (id: number) => void
+  onToggleFavorite: (id: number) => void
   onSettings: (patch: Partial<Settings>) => void
 }
 
@@ -41,7 +43,17 @@ export function Sidebar(p: Props) {
         >
           {collapsed ? <Plus className="size-4" /> : <Minus className="size-4" />}
         </Button>
-        <span className="font-title text-2xl font-bold tracking-wide uppercase lg:text-3xl">localmd</span>
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault() // soft navigation: reset state, no reload
+            p.onHome()
+          }}
+          className="font-title text-2xl font-bold tracking-wide uppercase lg:text-3xl"
+        >
+          localmd
+          <span className="ml-0.5 text-sm font-medium tracking-normal normal-case text-muted-foreground lg:text-base">.dev</span>
+        </a>
         <div className="ml-auto flex items-center gap-1 lg:hidden">
           <SettingsMenu settings={p.settings} onChange={p.onSettings} side="bottom" align="end" />
           <ThemeToggle />
@@ -129,10 +141,10 @@ function RootFolder(p: Props) {
 function Status(p: Props) {
   if (p.supported === false)
     return <p className="text-xs text-muted-foreground">Needs a Chromium browser (File System Access API).</p>
-  if (!p.name)
+  if (!p.name && !p.rootName)
     return (
       <p className="text-[11px] leading-snug text-muted-foreground/70">
-        Pick a Markdown or .md.html file; it re-renders on every save.
+        Pick a Markdown, text or code file; it re-renders on every save.
       </p>
     )
   if (p.error) return <p className="text-xs text-destructive">{p.error}</p>
@@ -147,6 +159,7 @@ function when(ts: number): string {
 
 function Recent(p: Props) {
   const ref = useFlip<HTMLUListElement>()
+  const [confirmId, setConfirmId] = useState<number | null>(null) // favorite awaiting removal confirmation
   return (
     <ul
       ref={ref}
@@ -154,6 +167,7 @@ function Recent(p: Props) {
     >
       {p.history.map((e) => {
         const active = e.id === p.activeId
+        const confirming = confirmId === e.id
         return (
           <li
             key={e.id}
@@ -165,29 +179,65 @@ function Recent(p: Props) {
           >
             <button
               type="button"
-              className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left focus-visible:outline-hidden"
-              onClick={() => p.onOpenEntry(e)}
-              title={e.path ? e.path.join('/') : e.name}
+              className={cn(
+                'ml-1 rounded p-1 focus-visible:outline-hidden',
+                e.favorite
+                  ? 'text-amber-500 hover:text-amber-600 dark:text-amber-400'
+                  : 'text-muted-foreground/40 hover:text-foreground focus-visible:text-foreground',
+              )}
+              onClick={() => p.onToggleFavorite(e.id!)}
+              title={e.favorite ? 'Unfavorite' : 'Favorite'}
             >
-              <FileText className={cn('size-3.5 shrink-0', active ? 'text-foreground' : 'text-muted-foreground')} />
-              <span className="min-w-0 flex-1">
-                <span
-                  className={cn(
-                    'block truncate text-sm decoration-2 underline-offset-2 group-has-focus-visible:underline',
-                    active && 'font-medium',
-                  )}
-                >
-                  {e.name}
-                </span>
-                <span className="block text-xs text-muted-foreground">
-                  {active ? `updated ${when(p.lastModified)}` : `opened ${when(e.openedAt)}`}
-                </span>
-              </span>
+              <Star className={cn('size-3.5', e.favorite && 'fill-current')} />
             </button>
+            {confirming ? (
+              // buttons cannot nest, so the confirmation replaces the open button
+              <div className="min-w-0 flex-1 px-1.5 py-1.5 text-left">
+                <span className="block truncate text-sm">{e.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  Remove favorite?{' '}
+                  <button
+                    type="button"
+                    className="font-medium text-destructive-foreground hover:underline"
+                    onClick={() => {
+                      setConfirmId(null)
+                      p.onRemoveEntry(e.id!)
+                    }}
+                  >
+                    Remove
+                  </button>
+                  {' · '}
+                  <button type="button" className="hover:underline" onClick={() => setConfirmId(null)}>
+                    Keep
+                  </button>
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-left focus-visible:outline-hidden"
+                onClick={() => p.onOpenEntry(e)}
+                title={e.path ? e.path.join('/') : e.name}
+              >
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={cn(
+                      'block truncate text-sm decoration-2 underline-offset-2 group-has-focus-visible:underline',
+                      active && 'font-medium',
+                    )}
+                  >
+                    {e.name}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {active ? `updated ${when(p.lastModified)}` : `opened ${when(e.openedAt)}`}
+                  </span>
+                </span>
+              </button>
+            )}
             <button
               type="button"
               className="mr-1 rounded p-1 text-muted-foreground/50 hover:text-foreground focus-visible:text-foreground focus-visible:outline-hidden"
-              onClick={() => p.onRemoveEntry(e.id!)}
+              onClick={() => (e.favorite ? setConfirmId(confirming ? null : e.id!) : p.onRemoveEntry(e.id!))}
               title="Remove from list"
             >
               <X className="size-3.5" />

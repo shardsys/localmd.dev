@@ -103,3 +103,100 @@ export function formatSize(n: number): string {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} kB`
   return `${(n / 1024 / 1024).toFixed(1)} MB`
 }
+
+/** How a file is shown: Markdown renders, SVG/images display, text gets highlighted, binary opens in a tab. */
+export type FileKind = 'markdown' | 'svg' | 'image' | 'text' | 'binary'
+
+const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i
+const BINARY_RE =
+  /\.(pdf|zip|gz|tgz|bz2|xz|7z|rar|tar|jar|war|exe|dll|so|dylib|bin|dmg|iso|img|wasm|class|o|a|pyc|woff2?|ttf|otf|eot|mp[34]|m4[av]|wav|ogg|flac|webm|mkv|mov|avi|psd|ai|sketch|fig|sqlite|db|parquet|doc|docx|xls|xlsx|ppt|pptx|heic|tiff?)$/i
+
+export function fileKind(name: string): FileKind {
+  if (isMarkdownName(name)) return 'markdown'
+  if (/\.svg$/i.test(name)) return 'svg'
+  if (IMAGE_RE.test(name)) return 'image'
+  if (BINARY_RE.test(name)) return 'binary'
+  return 'text' // anything else is treated as text; the viewer sniffs for binary content
+}
+
+export const TEXT_MAX = 2 * 1024 * 1024 // larger text files open in a new tab instead
+
+/** True if the first bytes contain no NUL and decode as UTF-8. */
+export async function looksLikeText(file: File): Promise<boolean> {
+  const buf = new Uint8Array(await file.slice(0, 8192).arrayBuffer())
+  if (buf.includes(0)) return false
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(buf.subarray(0, buf.length - 3)) // trailing bytes may cut a sequence
+    return true
+  } catch {
+    return false
+  }
+}
+
+// extension -> highlight.js language, where the extension is not already an hljs alias
+const LANG_BY_EXT: Record<string, string> = {
+  h: 'c',
+  hh: 'cpp',
+  hpp: 'cpp',
+  cc: 'cpp',
+  cxx: 'cpp',
+  tsx: 'typescript',
+  mts: 'typescript',
+  cts: 'typescript',
+  jsonc: 'json',
+  json5: 'json',
+  lock: 'json',
+  vue: 'xml',
+  svelte: 'xml',
+  astro: 'xml',
+  htm: 'xml',
+  env: 'bash',
+  csv: 'plaintext',
+  log: 'plaintext',
+  cfg: 'ini',
+  conf: 'ini',
+  service: 'ini',
+  tf: 'ini',
+  hcl: 'ini',
+  gradle: 'groovy',
+  mdx: 'markdown',
+  rst: 'plaintext',
+  tex: 'latex',
+  pl: 'perl',
+  pm: 'perl',
+  m: 'objectivec',
+  mm: 'objectivec',
+  ex: 'elixir',
+  exs: 'elixir',
+  clj: 'clojure',
+  cljs: 'clojure',
+  hs: 'haskell',
+  ml: 'ocaml',
+  mli: 'ocaml',
+  jl: 'julia',
+  fs: 'fsharp',
+  fsx: 'fsharp',
+}
+const LANG_BY_NAME: Record<string, string> = {
+  dockerfile: 'dockerfile',
+  containerfile: 'dockerfile',
+  makefile: 'makefile',
+  gnumakefile: 'makefile',
+  'cmakelists.txt': 'cmake',
+  license: 'plaintext',
+  '.gitignore': 'bash',
+  '.gitattributes': 'bash',
+  '.dockerignore': 'bash',
+  '.npmrc': 'ini',
+  '.editorconfig': 'ini',
+}
+
+/** highlight.js language hint for a file name; the extension itself is a fine guess for most hljs aliases. */
+export function languageFor(name: string): string {
+  const lower = name.toLowerCase()
+  if (LANG_BY_NAME[lower]) return LANG_BY_NAME[lower]
+  if (lower.startsWith('.env')) return 'bash'
+  if (lower.startsWith('dockerfile.')) return 'dockerfile'
+  const ext = lower.includes('.') ? lower.slice(lower.lastIndexOf('.') + 1) : ''
+  return LANG_BY_EXT[ext] ?? ext
+}

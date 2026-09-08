@@ -1,8 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { addHistory, deleteRoot, getRoot, listHistory, putRoot, removeHistory } from '#/lib/idb'
+import { addHistory, deleteRoot, getRoot, listHistory, putRoot, removeHistory, setFavorite, sortHistory } from '#/lib/idb'
 import type { HistoryEntry } from '#/lib/idb'
-import { getDir, getFile, hashToPath, isMarkdownName, isReadmeName, listDir, pathToHash, resolveHref } from '#/lib/fs'
-import type { DirEntry, Segs } from '#/lib/fs'
+import {
+  TEXT_MAX,
+  fileKind,
+  getDir,
+  getFile,
+  hashToPath,
+  isReadmeName,
+  listDir,
+  looksLikeText,
+  pathToHash,
+  resolveHref,
+} from '#/lib/fs'
+import type { DirEntry, FileKind, Segs } from '#/lib/fs'
 
 const POLL_MS = 250
 const PICKER = {
@@ -16,10 +27,14 @@ async function granted(h: FileSystemHandle): Promise<boolean> {
   return (await h.requestPermission({ mode: 'read' })) === 'granted'
 }
 
-function setUrl(h: string, push: boolean) {
-  if (location.hash === h || (!h && !location.hash)) return
-  if (push) window.history.pushState(null, '', h || location.pathname)
-  else window.history.replaceState(null, '', h || location.pathname)
+const rawFromUrl = () => new URLSearchParams(location.search).get('view') === 'raw'
+
+/** Path lives in the hash, the non-default view in `?view=raw`. */
+function setUrl(h: string, push: boolean, raw = false) {
+  const url = location.pathname + (raw ? '?view=raw' : '') + h
+  if (url === location.pathname + location.search + location.hash) return
+  if (push) window.history.pushState(null, '', url)
+  else window.history.replaceState(null, '', url)
 }
 
 export type Readme = { name: string; text: string }
@@ -41,7 +56,9 @@ export function useLocalFile() {
   const [pending, setPending] = useState<string | null>(null) // path from the URL awaiting permission
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [activeId, setActiveId] = useState<number | null>(null)
-  const [text, setText] = useState<string | null>(null)
+  const [file, setFile] = useState<File | null>(null) // latest snapshot of the open file
+  const [text, setText] = useState<string | null>(null) // its contents, for text kinds that are displayable
+  const [raw, setRaw] = useState(false) // source view instead of rendered; mirrored in the URL
   const [lastModified, setLastModified] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const lastRef = useRef(0)
@@ -67,6 +84,7 @@ export function useLocalFile() {
     setReadme(null)
     setError(null)
     setPending(null)
+    setRaw(false)
     setUrl(p ? pathToHash(p, 'file') : '', push)
     setActiveId(await addHistory(h, p))
     setHistory(await listHistory())
@@ -81,6 +99,7 @@ export function useLocalFile() {
         const d = await getDir(r, segs)
         const list = await listDir(d)
         setHandle(null)
+        setFile(null)
         setText(null)
         setActiveId(null)
         setPath(null)
@@ -115,7 +134,7 @@ export function useLocalFile() {
           if (!(e instanceof DOMException && (e.name === 'TypeMismatchError' || e.name === 'NotFoundError'))) throw e
         }
         if (!file) return openDir(segs, push)
-        if (isMarkdownName(file.name)) return select(file, segs, push)
+        if (fileKind(file.name) !== 'binary') return select(file, segs, push)
         window.open(URL.createObjectURL(await file.getFile()), '_blank', 'noopener')
       } catch (e) {
         fail(e)
@@ -129,6 +148,7 @@ export function useLocalFile() {
     const ok = 'showOpenFilePicker' in window
     setSupported(ok)
     if (!ok) return
+    const initialRaw = rawFromUrl()
     listHistory()
       .then(setHistory)
       .catch(() => {})
@@ -139,8 +159,13 @@ export function useLocalFile() {
         rootRef.current = r
         const target = hashToPath(location.hash)
         if (!target) return
-        if ((await r.queryPermission({ mode: 'read' })) === 'granted') void openPath(target.segs, false)
-        else setPending(location.hash.slice(1))
+        if ((await r.queryPermission({ mode: 'read' })) === 'granted') {
+          await openPath(target.segs, false)
+          if (initialRaw) {
+            setRaw(true)
+            setUrl(location.hash, false, true)
+          }
+        } else setPending(location.hash.slice(1))
       })
       .catch(() => {})
   }, [openPath])
@@ -149,7 +174,9 @@ export function useLocalFile() {
   useEffect(() => {
     const onPop = () => {
       const target = hashToPath(location.hash)
-      if (target) void openPath(target.segs, false)
+      const r = rawFromUrl()
+      if (target) void openPath(target.segs, false).then(() => setRaw(r))
+      else setRaw(r)
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
@@ -160,6 +187,7 @@ export function useLocalFile() {
     let cancelled = false
     let busy = false
     lastRef.current = 0
+    const kind = fileKind(handle.name)
     const tick = async () => {
       if (busy) return
       busy = true
@@ -167,8 +195,11 @@ export function useLocalFile() {
         const f = await handle.getFile()
         if (cancelled || f.lastModified === lastRef.current) return
         lastRef.current = f.lastModified
-        const t = await f.text()
+        // images are shown from the File itself; text is read unless it is huge or not actually text
+        const readable = kind !== 'image' && f.size <= TEXT_MAX && (kind !== 'text' || (await looksLikeText(f)))
+        const t = readable ? await f.text() : null
         if (cancelled) return
+        setFile(f)
         setText(t)
         setLastModified(f.lastModified)
         setError(null)
@@ -200,9 +231,9 @@ export function useLocalFile() {
 
   const openEntry = useCallback(
     (e: HistoryEntry) => {
-      // optimistic: move to top and highlight now, persist after
+      // optimistic: bump (below favorites) and highlight now, persist after
       setActiveId(e.id ?? null)
-      setHistory((h) => [{ ...e, openedAt: Date.now() }, ...h.filter((x) => x.id !== e.id)])
+      setHistory((h) => sortHistory([{ ...e, openedAt: Date.now() }, ...h.filter((x) => x.id !== e.id)]))
       return select(e.handle).catch(fail)
     },
     [select, fail],
@@ -297,10 +328,41 @@ export function useLocalFile() {
     [dirPath, openPath],
   )
 
+  /** Back to the splash: closes the file or listing, keeps root and history. */
+  const goHome = useCallback(() => {
+    setHandle(null)
+    setFile(null)
+    setText(null)
+    setPath(null)
+    setDirPath(null)
+    setEntries(null)
+    setReadme(null)
+    setActiveId(null)
+    setError(null)
+    setRaw(false)
+    setUrl('', true)
+  }, [])
+
+  /** Switch between the rendered and the source view of the open file. */
+  const setView = useCallback((r: boolean) => {
+    setRaw(r)
+    setUrl(location.hash, false, r)
+  }, [])
+
   const resume = useCallback(() => {
     const target = hashToPath('#' + (pending ?? ''))
     if (target) void openPath(target.segs, false)
   }, [pending, openPath])
+
+  /** Pin/unpin a recent entry; optimistic, persisted after. */
+  const toggleFavorite = useCallback(
+    (id: number) => {
+      const next = !history.find((x) => x.id === id)?.favorite
+      setHistory((h) => sortHistory(h.map((x) => (x.id === id ? { ...x, favorite: next } : x))))
+      return setFavorite(id, next).catch(fail)
+    },
+    [history, fail],
+  )
 
   const remove = useCallback(
     (id: number) =>
@@ -316,6 +378,10 @@ export function useLocalFile() {
   return {
     supported,
     name: handle?.name ?? null,
+    kind: (handle ? fileKind(handle.name) : null) as FileKind | null,
+    file,
+    raw,
+    setView,
     rootName: root?.name ?? null,
     path,
     dirPath,
@@ -333,11 +399,14 @@ export function useLocalFile() {
     openDir,
     openDirEntry,
     openEntry,
+    goHome,
     openLink,
+    openPath,
     resolveUrl,
     resume,
     chooseRoot,
     clearRoot,
     removeEntry: remove,
+    toggleFavorite,
   }
 }

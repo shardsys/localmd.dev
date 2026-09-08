@@ -157,7 +157,7 @@ export function Markdown({ source, className, style, onLink, resolveUrl }: Props
     [languages],
   )
   return (
-    <article className={cn('prose prose-neutral dark:prose-invert mt-6 max-w-none', className)} style={style}>
+    <article className={cn('prose prose-neutral dark:prose-invert mt-3 max-w-none', className)} style={style}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}

@@ -19,7 +19,10 @@ type Props = {
 export function Splash({ supported, pending, onOpen, onChooseRoot, onResume }: Props) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center px-6 py-20 text-center lg:py-32">
-      <h1 className="font-title text-5xl font-bold tracking-wide uppercase lg:text-6xl">localmd</h1>
+      <h1 className="font-title text-5xl font-bold tracking-wide uppercase lg:text-6xl">
+        localmd
+        <span className="ml-1 text-2xl font-medium tracking-normal normal-case text-muted-foreground lg:text-3xl">.dev</span>
+      </h1>
       <p className="mt-4 max-w-md text-lg text-muted-foreground">
         Open a Markdown file from your machine<br />and see it rendered as you write.
       </p>
