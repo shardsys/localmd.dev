@@ -1,5 +1,5 @@
 import { FolderOpen, FolderTree, Minus, Pencil, Plus, Star, X } from 'lucide-react'
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { useFlip } from '#/hooks/use-flip'
 import { SettingsMenu } from '#/components/settings-menu'
 import { ThemeToggle } from '#/components/theme-toggle'
@@ -28,9 +28,23 @@ type Props = {
   onSettings: (patch: Partial<Settings>) => void
 }
 
+const COLLAPSED_KEY = 'localmd-collapsed'
+
 /** Side panel on large screens, collapsible top bar on small ones. */
 export function Sidebar(p: Props) {
+  // SSR renders expanded; until hydration the `html.collapsed` class set by the init script in __root
+  // keeps it collapsed via CSS. State takes over before paint, then the class is dropped.
   const [collapsed, setCollapsed] = useState(false)
+  useLayoutEffect(() => {
+    const html = document.documentElement
+    setCollapsed(html.classList.contains('collapsed'))
+    html.classList.remove('collapsed')
+  }, [])
+  const toggle = () => {
+    const next = !collapsed
+    localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0')
+    setCollapsed(next)
+  }
   return (
     <aside className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur lg:flex lg:h-dvh lg:w-64 lg:shrink-0 lg:flex-col lg:border-r lg:border-b-0">
       <div className="flex items-center gap-1 px-3 py-2 lg:px-5 lg:py-4">
@@ -38,7 +52,7 @@ export function Sidebar(p: Props) {
           variant="ghost"
           size="icon-sm"
           className="lg:hidden"
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={toggle}
           title={collapsed ? 'Expand' : 'Collapse'}
         >
           {collapsed ? <Plus className="size-4" /> : <Minus className="size-4" />}
@@ -62,14 +76,14 @@ export function Sidebar(p: Props) {
       {/* small: grid-rows animates the collapse; large: both wrappers are `contents` */}
       <div
         className={cn(
-          'grid transition-[grid-template-rows] duration-300 ease-out lg:contents',
+          'grid transition-[grid-template-rows] duration-300 ease-out max-lg:[.collapsed_&]:grid-rows-[0fr] lg:contents',
           collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
         )}
       >
         <div className="min-h-0 overflow-hidden lg:contents">
           <div
             className={cn(
-              'flex flex-col gap-3 px-3 pb-3 transition-opacity duration-300 lg:min-h-0 lg:flex-1 lg:px-5 lg:pb-5 lg:opacity-100',
+              'flex flex-col gap-3 px-3 pb-3 transition-opacity duration-300 max-lg:[.collapsed_&]:opacity-0 lg:min-h-0 lg:flex-1 lg:px-5 lg:pb-5 lg:opacity-100',
               collapsed && 'opacity-0',
             )}
           >

@@ -2,9 +2,10 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { ThemeProvider } from '#/components/theme-provider'
 import appCss from '../styles.css?url'
 
-// Set the .dark class before hydration (stored choice, else OS preference) to avoid a flash.
-const THEME_INIT_SCRIPT =
-  '(function(){try{var t=localStorage.getItem("localmd-theme");var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()'
+// Set the .dark class before hydration (stored choice, else OS preference) to avoid a flash;
+// likewise .collapsed for the small-screen top bar (see Sidebar).
+const INIT_SCRIPT =
+  '(function(){try{var c=document.documentElement.classList;var t=localStorage.getItem("localmd-theme");if(t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches))c.add("dark");if(localStorage.getItem("localmd-collapsed")==="1")c.add("collapsed")}catch(e){}})()'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -29,7 +30,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: INIT_SCRIPT }} />
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>

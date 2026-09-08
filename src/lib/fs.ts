@@ -104,17 +104,18 @@ export function formatSize(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`
 }
 
-/** How a file is shown: Markdown renders, SVG/images display, text gets highlighted, binary opens in a tab. */
-export type FileKind = 'markdown' | 'svg' | 'image' | 'text' | 'binary'
+/** How a file is shown: Markdown renders, SVG/images display, PDF previews in a frame, text gets highlighted, binary opens in a tab. */
+export type FileKind = 'markdown' | 'svg' | 'image' | 'pdf' | 'text' | 'binary'
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i
 const BINARY_RE =
-  /\.(pdf|zip|gz|tgz|bz2|xz|7z|rar|tar|jar|war|exe|dll|so|dylib|bin|dmg|iso|img|wasm|class|o|a|pyc|woff2?|ttf|otf|eot|mp[34]|m4[av]|wav|ogg|flac|webm|mkv|mov|avi|psd|ai|sketch|fig|sqlite|db|parquet|doc|docx|xls|xlsx|ppt|pptx|heic|tiff?)$/i
+  /\.(zip|gz|tgz|bz2|xz|7z|rar|tar|jar|war|exe|dll|so|dylib|bin|dmg|iso|img|wasm|class|o|a|pyc|woff2?|ttf|otf|eot|mp[34]|m4[av]|wav|ogg|flac|webm|mkv|mov|avi|psd|ai|sketch|fig|sqlite|db|parquet|doc|docx|xls|xlsx|ppt|pptx|heic|tiff?)$/i
 
 export function fileKind(name: string): FileKind {
   if (isMarkdownName(name)) return 'markdown'
   if (/\.svg$/i.test(name)) return 'svg'
   if (IMAGE_RE.test(name)) return 'image'
+  if (/\.pdf$/i.test(name)) return 'pdf'
   if (BINARY_RE.test(name)) return 'binary'
   return 'text' // anything else is treated as text; the viewer sniffs for binary content
 }

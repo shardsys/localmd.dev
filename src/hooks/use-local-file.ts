@@ -195,8 +195,8 @@ export function useLocalFile() {
         const f = await handle.getFile()
         if (cancelled || f.lastModified === lastRef.current) return
         lastRef.current = f.lastModified
-        // images are shown from the File itself; text is read unless it is huge or not actually text
-        const readable = kind !== 'image' && f.size <= TEXT_MAX && (kind !== 'text' || (await looksLikeText(f)))
+        // images and PDFs are shown from the File itself; text is read unless it is huge or not actually text
+        const readable = kind !== 'image' && kind !== 'pdf' && f.size <= TEXT_MAX && (kind !== 'text' || (await looksLikeText(f)))
         const t = readable ? await f.text() : null
         if (cancelled) return
         setFile(f)

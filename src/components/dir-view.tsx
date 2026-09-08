@@ -116,7 +116,7 @@ export function DirView({ entries, showHidden, onOpen, onUp, fill }: Props) {
             const kind = e.kind === 'file' ? fileKind(e.name) : null
             const md = kind === 'markdown'
             const inApp = kind !== 'binary' // everything but binary opens here
-            const Icon = e.kind === 'directory' ? Folder : md ? FileText : kind === 'image' || kind === 'svg' ? Image : File
+            const Icon = e.kind === 'directory' ? Folder : md ? FileText : kind === 'image' || kind === 'svg' ? Image : kind === 'pdf' ? FileText : File
             return (
               <li
                 key={e.name}

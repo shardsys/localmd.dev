@@ -60,8 +60,8 @@ function Page() {
     ;(document.getElementById(id) ?? document.getElementById(`user-content-${id}`))?.scrollIntoView({ block: 'start' })
   }, [f.text, f.hash])
 
-  // source views are capped at the viewport (large screens) and scroll inside their box
-  const fillsScreen = f.kind === 'text' || (hasRawView(f.kind) && f.raw)
+  // source views and PDFs are capped at the viewport (large screens) and scroll inside their box
+  const fillsScreen = f.kind === 'text' || f.kind === 'pdf' || (hasRawView(f.kind) && f.raw)
   // a listing without a README may grow down to the page bottom; decided from the entries so it does not jump once the README text loads
   const fillsListing = f.entries != null && !f.entries.some((e) => e.kind === 'file' && isReadmeName(e.name))
 

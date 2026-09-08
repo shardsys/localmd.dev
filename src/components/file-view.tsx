@@ -47,6 +47,7 @@ type Props = {
 /** Shows the open file according to its kind and the chosen view. */
 export function FileView({ kind, name, file, text, raw, markdown }: Props) {
   if (kind === 'image') return file ? <ImageView file={file} /> : null
+  if (kind === 'pdf') return file ? <PdfView file={file} /> : null
   if (text == null) return file ? <Unreadable file={file} /> : null
   if (kind === 'markdown' && !raw) return <Markdown source={extractBody(text)} {...markdown} />
   if (kind === 'svg' && !raw) return <SvgView text={text} name={name} />
@@ -84,13 +85,8 @@ function SvgView({ text, name }: { text: string; name: string }) {
 }
 
 function ImageView({ file }: { file: File }) {
-  const [url, setUrl] = useState<string | null>(null)
+  const url = useObjectUrl(file)
   const [dims, setDims] = useState('')
-  useEffect(() => {
-    const u = URL.createObjectURL(file)
-    setUrl(u)
-    return () => URL.revokeObjectURL(u)
-  }, [file])
   if (!url) return null
   return (
     <Frame caption={[file.name, dims, formatSize(file.size)].filter(Boolean).join(' · ')}>
@@ -101,6 +97,31 @@ function ImageView({ file }: { file: File }) {
         onLoad={(e) => setDims(`${e.currentTarget.naturalWidth} × ${e.currentTarget.naturalHeight}`)}
       />
     </Frame>
+  )
+}
+
+/** Object URL for a File, revoked when it changes. */
+function useObjectUrl(file: File): string | null {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    const u = URL.createObjectURL(file)
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [file])
+  return url
+}
+
+/** PDF in the browser's viewer; fills the column on large screens (see `fillsScreen` in the route). */
+function PdfView({ file }: { file: File }) {
+  const url = useObjectUrl(file)
+  if (!url) return null
+  return (
+    <figure className="mt-3 flex min-h-0 flex-1 flex-col">
+      <iframe src={url} title={file.name} className="h-[75vh] w-full rounded-lg border bg-muted/40 lg:h-auto lg:min-h-0 lg:flex-1" />
+      <figcaption className="mt-2 shrink-0 text-center text-xs text-muted-foreground">
+        {file.name} · {formatSize(file.size)}
+      </figcaption>
+    </figure>
   )
 }
 

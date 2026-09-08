@@ -17,15 +17,18 @@ import { CodeBlock } from '#/components/code-block'
 import { LocalImage } from '#/components/local-image'
 import { isExternalHref } from '#/lib/fs'
 import { Mermaid } from '#/components/mermaid'
+import { rehypeSvgRefs, svgSchema } from '#/lib/svg-sanitize'
 import { cn } from '#/lib/utils'
 
 // Default schema keeps `language-*` on <code>; also keep math-* (for rehype-katex) and hljs classes.
-// Images may also be data: URIs (embedded images); the default allows only http(s).
+// Images may also be data: URIs (embedded images); the default allows only http(s). Inline SVG is allowed.
 const schema = {
   ...defaultSchema,
-  protocols: { ...defaultSchema.protocols, src: [...(defaultSchema.protocols?.src ?? []), 'data'] },
+  tagNames: [...(defaultSchema.tagNames ?? []), ...svgSchema.tagNames],
+  protocols: { ...defaultSchema.protocols, ...svgSchema.protocols, src: [...(defaultSchema.protocols?.src ?? []), 'data'] },
   attributes: {
     ...defaultSchema.attributes,
+    ...svgSchema.attributes,
     code: [...(defaultSchema.attributes?.code ?? []), ['className', /^(language-|math-|hljs)/]],
     span: [...(defaultSchema.attributes?.span ?? []), ['className', /^hljs-/]],
     pre: [...(defaultSchema.attributes?.pre ?? []), ['className', /^hljs/]],
@@ -153,7 +156,7 @@ export function Markdown({ source, className, style, onLink, resolveUrl }: Props
   const components = useComponents({ onLink, resolveUrl })
   // raw HTML -> sanitize -> slug/katex/highlight, so their output is not stripped
   const rehypePlugins = useMemo<PluggableList>(
-    () => [rehypeRaw, [rehypeSanitize, schema], rehypeSlug, rehypeKatex, [rehypeHighlight, languages ? { languages } : {}]],
+    () => [rehypeRaw, [rehypeSanitize, schema], rehypeSvgRefs, rehypeSlug, rehypeKatex, [rehypeHighlight, languages ? { languages } : {}]],
     [languages],
   )
   return (
