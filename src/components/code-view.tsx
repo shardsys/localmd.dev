@@ -4,7 +4,7 @@ import { Button } from '#/components/ui/button'
 
 const COPIED_MS = 1500
 
-/** Whole-file source view: highlight.js (lazy-loaded) with a line-number gutter and a copy button. Shrinks to fit a flex column parent. */
+/** Whole-file source view: highlight.js (lazy-loaded) with a line-number gutter and a copy button. Shrinks to fit a flex column parent. `isolate` keeps the sticky gutter's z-index inside this box. */
 export function CodeView({ code, language }: { code: string; language: string }) {
   const [html, setHtml] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -38,7 +38,7 @@ export function CodeView({ code, language }: { code: string; language: string })
   if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop()
 
   return (
-    <div className="group relative mt-3 flex min-h-0 flex-col overflow-hidden rounded-sm border border-foreground/20 bg-background font-mono text-[0.8125rem] leading-[1.55]">
+    <div className="group relative isolate mt-3 flex min-h-0 flex-col overflow-hidden rounded-sm border border-foreground/20 bg-background font-mono text-[0.8125rem] leading-[1.55]">
       {/* this box, not the page, scrolls the file */}
       <div className="min-h-0 overflow-auto">
         {/* content-sized row, so the gutter spans the whole file and not just the visible height */}
