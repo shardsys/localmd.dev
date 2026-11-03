@@ -26,7 +26,7 @@
 Live preview of a local Markdown file, entirely in the browser. Pick a file once; it is
 re-read from disk every second and re-rendered on change. Nothing is uploaded.
 
-Renders GFM, highlighted code, KaTeX math, Mermaid diagrams and sanitized HTML (inline SVG included).
+Renders GitHub-styled GFM (alerts included), highlighted code, KaTeX math, Mermaid diagrams and sanitized HTML (inline SVG included).
 Other text and code files show with syntax highlighting, SVG and images display inline, PDFs preview
 in a frame; Markdown and SVG can be switched between the rendered and the raw view (`?view=raw`).
 Optionally set a root folder to get breadcrumbs, folder listings, relative links and images.

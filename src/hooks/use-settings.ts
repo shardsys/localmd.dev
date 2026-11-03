@@ -16,7 +16,7 @@ export type NumericKey = keyof typeof RANGES
 
 export type Settings = { font: Font } & Record<NumericKey, number>
 
-export const DEFAULTS: Settings = { font: 'sans', size: 16, width: 48, tracking: 0, leading: 1.75 }
+export const DEFAULTS: Settings = { font: 'sans', size: 16, width: 72, tracking: 0, leading: 1.5 }
 
 function load(): Settings {
   try {

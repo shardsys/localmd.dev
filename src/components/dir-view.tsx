@@ -103,12 +103,12 @@ export function DirView({ entries, showHidden, onOpen, onUp, fill }: Props) {
   return (
     <div className={cn('mt-3', fill && 'flex min-h-0 flex-1 flex-col')}>
       {visible.length === 0 ? (
-        <p className="rounded-md border border-foreground/20 px-4 py-8 text-center text-sm text-muted-foreground">Empty folder</p>
+        <p className="rounded-md border px-4 py-8 text-center text-sm text-muted-foreground">Empty folder</p>
       ) : (
         <ul
           ref={listRef}
           className={cn(
-            'divide-y divide-foreground/10 overflow-y-scroll rounded-md border border-foreground/20', // always-on scrollbar gutter, so rows do not shift when it appears
+            'divide-y overflow-y-scroll rounded-md border', // always-on scrollbar gutter, so rows do not shift when it appears
             fill ? 'min-h-0' : 'max-h-72', // content-sized; shrinks and scrolls only when it hits the page bottom
           )}
         >
@@ -126,15 +126,15 @@ export function DirView({ entries, showHidden, onOpen, onUp, fill }: Props) {
                 tabIndex={-1}
                 onClick={() => setActive(i)}
                 className={cn(
-                  // first/last radii match the frame (8px minus its 1px border) so the ring is not clipped
-                  'flex items-center gap-3 px-3 py-2 text-sm outline-none first:rounded-t-[7px] last:rounded-b-[7px] hover:bg-muted/50',
-                  active === i && 'bg-muted ring-1 ring-ring ring-inset',
+                  // first/last radii match the frame (4px minus its 1px border) so the ring is not clipped
+                  'flex h-10 items-center gap-3 px-4 text-sm outline-none first:rounded-t-[3px] last:rounded-b-[3px] hover:bg-muted',
+                  active === i && 'bg-muted ring-2 ring-ring ring-inset',
                 )}
               >
                 <Icon
                   className={cn(
-                    'size-4 shrink-0',
-                    md || e.kind === 'directory' ? 'text-foreground' : 'text-muted-foreground',
+                    'size-4 shrink-0 text-muted-foreground',
+                    e.kind === 'directory' && 'fill-current', // filled folders, as on GitHub
                   )}
                 />
                 <button
@@ -142,13 +142,12 @@ export function DirView({ entries, showHidden, onOpen, onUp, fill }: Props) {
                   tabIndex={-1}
                   onClick={() => onOpen(e)}
                   className={cn(
-                    'min-w-0 flex-1 truncate text-left hover:underline',
+                    'min-w-0 flex-1 truncate text-left hover:text-(--gh-accent) hover:underline',
                     !md && e.kind === 'file' && 'text-muted-foreground',
                   )}
                   title={!inApp ? 'Opens in a new tab' : undefined}
                 >
                   {e.name}
-                  {e.kind === 'directory' && '/'}
                 </button>
                 {e.size != null && (
                   <span className="w-16 text-right text-xs tabular-nums text-muted-foreground">

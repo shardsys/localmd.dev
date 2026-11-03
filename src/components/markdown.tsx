@@ -1,4 +1,4 @@
-import type { Element } from 'hast'
+import type { Element, Root, RootContent } from 'hast'
 import { toText } from 'hast-util-to-text'
 import { useEffect, useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import type { PluggableList } from 'unified'
 import type { LanguageFn } from 'highlight.js'
+import { Info, Lightbulb, Link as LinkIcon, MessageSquareWarning, OctagonAlert, TriangleAlert } from 'lucide-react'
 import { CodeBlock } from '#/components/code-block'
 import { LocalImage } from '#/components/local-image'
 import { isExternalHref } from '#/lib/fs'
@@ -78,6 +79,56 @@ function mermaidSource(node: Element | undefined): string | null {
   return Array.isArray(cls) && cls.includes('language-mermaid') ? toText(code, { whitespace: 'pre' }) : null
 }
 
+const ALERTS = {
+  note: { title: 'Note', Icon: Info },
+  tip: { title: 'Tip', Icon: Lightbulb },
+  important: { title: 'Important', Icon: MessageSquareWarning },
+  warning: { title: 'Warning', Icon: TriangleAlert },
+  caution: { title: 'Caution', Icon: OctagonAlert },
+} as const
+type AlertKind = keyof typeof ALERTS
+const ALERT_MARK = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*(?:\r?\n|$)/i
+
+/** GitHub alerts: a blockquote opening with `[!NOTE]` (etc.) becomes `div.markdown-alert` with a title. */
+function rehypeAlerts() {
+  const visit = (nodes: RootContent[]) => {
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i]!
+      if (n.type !== 'element') continue
+      if (n.tagName === 'blockquote') {
+        const alert = toAlert(n)
+        if (alert) nodes[i] = alert
+      }
+      visit(n.children)
+    }
+  }
+  return (tree: Root) => visit(tree.children)
+}
+
+function toAlert(bq: Element): Element | null {
+  const p = bq.children.find((c): c is Element => c.type === 'element')
+  const t = p?.tagName === 'p' ? p.children[0] : undefined
+  const m = t?.type === 'text' ? ALERT_MARK.exec(t.value) : null
+  if (!p || !t || t.type !== 'text' || !m) return null
+  const kind = m[1]!.toLowerCase() as AlertKind
+  t.value = t.value.slice(m[0].length)
+  if (!t.value) p.children.shift()
+  if (p.children[0]?.type === 'element' && p.children[0].tagName === 'br') p.children.shift() // soft break after the marker
+  const body = p.children.every((c) => c.type === 'text' && !c.value.trim()) ? bq.children.filter((c) => c !== p) : bq.children
+  const title: Element = {
+    type: 'element',
+    tagName: 'p',
+    properties: { className: ['markdown-alert-title'], dataAlert: kind },
+    children: [{ type: 'text', value: ALERTS[kind].title }],
+  }
+  return {
+    type: 'element',
+    tagName: 'div',
+    properties: { className: ['markdown-alert', `markdown-alert-${kind}`], dir: 'auto' },
+    children: [title, ...body],
+  }
+}
+
 type Nav = {
   onLink?: (href: string) => void // relative links to files/folders in the root
   resolveUrl?: (src: string) => Promise<string | null> // relative images
@@ -99,6 +150,49 @@ const baseComponents: Components = {
       </CodeBlock>
     )
   },
+  p({ node, children, ...props }) {
+    const kind = node?.properties.dataAlert as AlertKind | undefined
+    if (!kind || !(kind in ALERTS)) return <p {...props}>{children}</p>
+    const { Icon } = ALERTS[kind]
+    return (
+      <p {...props}>
+        <Icon className="size-4" aria-hidden />
+        {children}
+      </p>
+    )
+  },
+  h1: heading('h1'),
+  h2: heading('h2'),
+  h3: heading('h3'),
+  h4: heading('h4'),
+  h5: heading('h5'),
+  h6: heading('h6'),
+}
+
+type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+
+/** Heading with a hover link to itself (as on GitHub); in-page only, the URL hash holds the file path. */
+function heading(Tag: HeadingTag): Components[HeadingTag] {
+  return function Heading({ node, id, children, ...props }) {
+    return (
+      <Tag id={id} {...props}>
+        {id && (
+          <a
+            className="anchor"
+            href={`#${id}`}
+            aria-label={`Permalink: ${node ? toText(node) : id}`}
+            onClick={(e) => {
+              e.preventDefault()
+              scrollToId(id)
+            }}
+          >
+            <LinkIcon className="size-4" aria-hidden />
+          </a>
+        )}
+        {children}
+      </Tag>
+    )
+  }
 }
 
 type Props = Nav & { source: string; className?: string; style?: React.CSSProperties }
@@ -156,11 +250,11 @@ export function Markdown({ source, className, style, onLink, resolveUrl }: Props
   const components = useComponents({ onLink, resolveUrl })
   // raw HTML -> sanitize -> slug/katex/highlight, so their output is not stripped
   const rehypePlugins = useMemo<PluggableList>(
-    () => [rehypeRaw, [rehypeSanitize, schema], rehypeSvgRefs, rehypeSlug, rehypeKatex, [rehypeHighlight, languages ? { languages } : {}]],
+    () => [rehypeRaw, [rehypeSanitize, schema], rehypeSvgRefs, rehypeAlerts, rehypeSlug, rehypeKatex, [rehypeHighlight, languages ? { languages } : {}]],
     [languages],
   )
   return (
-    <article className={cn('prose prose-neutral dark:prose-invert mt-3 max-w-none', className)} style={style}>
+    <article className={cn('markdown-body', className)} style={style}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}

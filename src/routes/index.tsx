@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { FileText } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Breadcrumbs } from '#/components/breadcrumbs'
 import { DirView, isDotfile } from '#/components/dir-view'
-import { FileView, ViewToggle, hasRawView } from '#/components/file-view'
+import { FileView, hasRawView } from '#/components/file-view'
 import { Markdown } from '#/components/markdown'
 import { Sidebar } from '#/components/sidebar'
 import { Splash } from '#/components/splash'
@@ -67,7 +67,11 @@ function Page() {
 
   const article = {
     className: FONTS[settings.font],
-    style: { fontSize: `${settings.size}px`, lineHeight: settings.leading, letterSpacing: `${settings.tracking}em` },
+    style: {
+      '--md-size': `${settings.size}px`,
+      lineHeight: settings.leading,
+      letterSpacing: `${settings.tracking}em`,
+    } as React.CSSProperties,
     onLink: f.openLink,
     resolveUrl: f.resolveUrl,
   }
@@ -111,17 +115,20 @@ function Page() {
               fill={fillsListing}
             />
             {readme != null && f.readme && (
-              <section className="mt-6 overflow-hidden rounded-lg border">
-                <button
-                  type="button"
-                  onClick={() => f.openPath([...f.dirPath!, f.readme!.name])}
-                  className="flex w-full items-center gap-2 border-b bg-muted/50 px-4 py-2 font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
-                  title="Open this file"
-                >
-                  <FileText className="size-3.5" />
-                  {f.readme.name}
-                </button>
-                <div className="px-6 pb-8">
+              <section className="mt-4 rounded-md border">
+                {/* tab bar as on GitHub; the tab opens the file */}
+                <div className="flex h-12 items-stretch border-b px-2">
+                  <button
+                    type="button"
+                    onClick={() => f.openPath([...f.dirPath!, f.readme!.name])}
+                    className="relative flex items-center gap-2 px-2 text-sm font-semibold after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-(--gh-tab-underline)"
+                    title="Open this file"
+                  >
+                    <BookOpen className="size-4 text-muted-foreground" />
+                    {f.readme.name}
+                  </button>
+                </div>
+                <div className="px-4 py-6 sm:px-8 sm:py-8">
                   <Markdown source={readme} {...article} />
                 </div>
               </section>
@@ -134,11 +141,19 @@ function Page() {
           >
             <div className="flex min-h-7 shrink-0 items-center gap-3">
               <Breadcrumbs items={items} resolved={resolved} onCrumb={f.openAt} onChooseRoot={() => f.chooseRoot()} />
-              {hasRawView(f.kind) && f.text != null && (
-                <ViewToggle raw={f.raw} onChange={f.setView} className="ml-auto shrink-0" />
-              )}
             </div>
-            {f.kind && <FileView kind={f.kind} name={f.name} file={f.file} text={f.text} raw={f.raw} markdown={article} />}
+            {f.kind && (
+              <FileView
+                kind={f.kind}
+                name={f.name}
+                file={f.file}
+                text={f.text}
+                raw={f.raw}
+                onView={f.setView}
+                fill={fillsScreen}
+                markdown={article}
+              />
+            )}
           </div>
         ) : (
           <Splash

@@ -1,0 +1,443 @@
+/* GitHub-flavored Markdown styles, after GitHub's .markdown-body (github-markdown-css). */
+/* `--md-size` is the chosen text size; block gaps scale with it (GitHub: 16px). */
+
+.markdown-body {
+  --u: var(--md-size, 16px);
+  color: var(--gh-fg);
+  font-size: var(--md-size, 16px);
+  line-height: 1.5;
+  overflow-wrap: break-word;
+
+  & > *:first-child {
+    margin-top: 0 !important;
+  }
+  & > *:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  & a {
+    color: var(--gh-accent);
+    text-decoration: underline;
+    text-underline-offset: 0.2rem;
+  }
+  & a:not([href]) {
+    color: inherit;
+    text-decoration: none;
+  }
+  & b,
+  & strong {
+    font-weight: 600;
+  }
+  & mark {
+    background-color: var(--gh-attention-muted);
+    color: var(--gh-fg);
+  }
+  & small {
+    font-size: 90%;
+  }
+  & sub,
+  & sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+  }
+  & sub {
+    bottom: -0.25em;
+  }
+  & sup {
+    top: -0.5em;
+  }
+
+  /* blocks */
+  & p,
+  & blockquote,
+  & ul,
+  & ol,
+  & dl,
+  & table,
+  & pre,
+  & details,
+  & .markdown-alert,
+  & .katex-display {
+    margin-top: 0;
+    margin-bottom: var(--u);
+  }
+
+  & hr {
+    box-sizing: content-box;
+    height: 0.25em;
+    padding: 0;
+    margin: calc(var(--u) * 1.5) 0;
+    overflow: hidden;
+    background-color: var(--gh-border);
+    border: 0;
+  }
+
+  & blockquote {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0 1em;
+    color: var(--gh-fg-muted);
+    border-left: 0.25em solid var(--gh-border);
+    & > :first-child {
+      margin-top: 0;
+    }
+    & > :last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  /* headings */
+  & h1,
+  & h2,
+  & h3,
+  & h4,
+  & h5,
+  & h6 {
+    position: relative;
+    margin-top: calc(var(--u) * 1.5);
+    margin-bottom: var(--u);
+    font-weight: 600;
+    line-height: 1.25;
+    & code,
+    & tt {
+      padding: 0 0.2em;
+      font-size: inherit;
+    }
+  }
+  & h1 {
+    font-size: 2em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--gh-border-muted);
+  }
+  & h2 {
+    font-size: 1.5em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--gh-border-muted);
+  }
+  & h3 {
+    font-size: 1.25em;
+  }
+  & h4 {
+    font-size: 1em;
+  }
+  & h5 {
+    font-size: 0.875em;
+  }
+  & h6 {
+    font-size: 0.85em;
+    color: var(--gh-fg-muted);
+  }
+
+  /* hover link before each heading */
+  & .anchor {
+    position: absolute;
+    top: 50%;
+    left: -24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-top: -12px;
+    border-radius: 4px;
+    color: var(--gh-fg-muted);
+    opacity: 0;
+    text-decoration: none;
+    &:hover {
+      color: var(--gh-fg);
+    }
+    &:focus-visible {
+      opacity: 1;
+      outline: 2px solid var(--gh-accent);
+    }
+  }
+  & h1,
+  & h2 {
+    & .anchor {
+      margin-top: calc(-12px - 0.15em); /* centered above the bottom padding */
+    }
+  }
+  & :is(h1, h2, h3, h4, h5, h6):hover .anchor {
+    opacity: 1;
+  }
+
+  /* lists */
+  & ul,
+  & ol {
+    padding-left: 2em;
+  }
+  & ul {
+    list-style-type: disc;
+  }
+  & ol {
+    list-style-type: decimal;
+  }
+  & ol ol,
+  & ul ol {
+    list-style-type: lower-roman;
+  }
+  & ul ul ol,
+  & ul ol ol,
+  & ol ul ol,
+  & ol ol ol {
+    list-style-type: lower-alpha;
+  }
+  & ul ul,
+  & ul ol,
+  & ol ol,
+  & ol ul {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  & li > p {
+    margin-top: var(--u);
+  }
+  & li + li {
+    margin-top: 0.25em;
+  }
+  & .task-list-item {
+    list-style-type: none;
+  }
+  & .task-list-item + .task-list-item {
+    margin-top: 0.25em;
+  }
+  & .task-list-item input[type='checkbox'] {
+    margin: 0 0.2em 0.25em -1.4em;
+    vertical-align: middle;
+  }
+  & dl {
+    padding: 0;
+    & dt {
+      padding: 0;
+      margin-top: var(--u);
+      font-size: 1em;
+      font-style: italic;
+      font-weight: 600;
+    }
+    & dd {
+      padding: 0 var(--u);
+      margin-left: 0;
+      margin-bottom: var(--u);
+    }
+  }
+
+  /* tables: content-sized, never wider than the column; they scroll themselves */
+  & table {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow: auto;
+    border-spacing: 0;
+    border-collapse: collapse;
+    font-variant: tabular-nums;
+  }
+  & th {
+    font-weight: 600;
+  }
+  & th,
+  & td {
+    padding: 6px 13px;
+    border: 1px solid var(--gh-border);
+  }
+  & td > :last-child {
+    margin-bottom: 0;
+  }
+  & tr {
+    background-color: var(--gh-canvas);
+    border-top: 1px solid var(--gh-border-muted);
+  }
+  & tr:nth-child(2n) {
+    background-color: var(--gh-canvas-subtle);
+  }
+  & table img {
+    background-color: transparent;
+  }
+
+  /* media */
+  & img {
+    max-width: 100%;
+    box-sizing: content-box;
+    border-style: none;
+  }
+  & img[align='right'] {
+    padding-left: 20px;
+  }
+  & img[align='left'] {
+    padding-right: 20px;
+  }
+  & [align='center'] {
+    text-align: center;
+  }
+  & p[align='center'] img,
+  & div[align='center'] img {
+    display: inline-block;
+  }
+  & svg {
+    display: inline;
+  }
+
+  /* code */
+  & code,
+  & kbd,
+  & pre,
+  & samp,
+  & tt {
+    font-family: var(--gh-font-mono);
+  }
+  & code,
+  & tt {
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    white-space: break-spaces;
+    background-color: var(--gh-neutral-muted);
+    border-radius: 4px;
+  }
+  & code br,
+  & tt br {
+    display: none;
+  }
+  & del code {
+    text-decoration: inherit;
+  }
+  & samp {
+    font-size: 85%;
+  }
+  & pre {
+    padding: var(--u);
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    color: var(--gh-fg);
+    background-color: var(--gh-canvas-subtle);
+    border-radius: 4px;
+    word-wrap: normal;
+    & code,
+    & tt {
+      display: inline;
+      max-width: auto;
+      padding: 0;
+      margin: 0;
+      overflow: visible;
+      font-size: 100%;
+      line-height: inherit;
+      white-space: pre;
+      word-break: normal;
+      word-wrap: normal;
+      background-color: transparent;
+      border: 0;
+    }
+  }
+  & .code-block {
+    position: relative;
+    & > pre {
+      margin-bottom: var(--u);
+    }
+  }
+  & kbd {
+    display: inline-block;
+    padding: 4px;
+    font-size: 11px;
+    line-height: 10px;
+    color: var(--gh-fg);
+    vertical-align: middle;
+    background-color: var(--gh-canvas-subtle);
+    border: 1px solid var(--gh-border-muted);
+    border-bottom-color: var(--gh-border-muted);
+    border-radius: 4px;
+    box-shadow: inset 0 -1px 0 var(--gh-border-muted);
+  }
+
+  /* footnotes (remark-gfm) */
+  & .footnotes {
+    font-size: 12px;
+    color: var(--gh-fg-muted);
+    border-top: 1px solid var(--gh-border);
+    padding-top: var(--u);
+    & ol {
+      padding-left: var(--u);
+    }
+    & li {
+      position: relative;
+    }
+    & li:target {
+      color: var(--gh-fg);
+    }
+  }
+  & [data-footnote-ref]::before {
+    content: '[';
+  }
+  & [data-footnote-ref]::after {
+    content: ']';
+  }
+  & .data-footnote-backref g-emoji {
+    font-family: monospace;
+  }
+
+  & details summary {
+    cursor: pointer;
+  }
+  & details:not([open]) > *:not(summary) {
+    display: none;
+  }
+
+  & .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  /* alerts: > [!NOTE] etc. */
+  & .markdown-alert {
+    padding: 0.5rem 1rem;
+    color: inherit;
+    border-left: 0.25em solid var(--gh-border);
+    & > :first-child {
+      margin-top: 0;
+    }
+    & > :last-child {
+      margin-bottom: 0;
+    }
+  }
+  & .markdown-alert-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    line-height: 1;
+    & svg {
+      flex-shrink: 0;
+    }
+  }
+  & .markdown-alert-note {
+    border-left-color: var(--gh-accent-emphasis);
+    & .markdown-alert-title {
+      color: var(--gh-accent);
+    }
+  }
+  & .markdown-alert-tip {
+    border-left-color: var(--gh-success-emphasis);
+    & .markdown-alert-title {
+      color: var(--gh-success);
+    }
+  }
+  & .markdown-alert-important {
+    border-left-color: var(--gh-done-emphasis);
+    & .markdown-alert-title {
+      color: var(--gh-done);
+    }
+  }
+  & .markdown-alert-warning {
+    border-left-color: var(--gh-attention-emphasis);
+    & .markdown-alert-title {
+      color: var(--gh-attention);
+    }
+  }
+  & .markdown-alert-caution {
+    border-left-color: var(--gh-danger-emphasis);
+    & .markdown-alert-title {
+      color: var(--gh-danger);
+    }
+  }
+}

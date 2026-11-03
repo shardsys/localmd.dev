@@ -101,18 +101,19 @@ export function Sidebar(p: Props) {
                 <Recent {...p} />
               </>
             )}
-            <div className="hidden items-center justify-center gap-1 lg:mt-auto lg:flex">
-              <SettingsMenu settings={p.settings} onChange={p.onSettings} side="top" align="center" />
+            {/* full-bleed bar on the sidebar's bottom edge */}
+            <div className="-mx-5 -mb-5 hidden h-12 items-center gap-1 border-t bg-background px-2 lg:mt-auto lg:flex">
+              <a
+                href="https://x.com/nataliemarleny"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-8 min-w-0 flex-1 items-center truncate rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                Follow&nbsp;<span className="font-medium text-foreground">@nataliemarleny</span>
+              </a>
+              <SettingsMenu settings={p.settings} onChange={p.onSettings} side="top" align="end" />
               <ThemeToggle />
             </div>
-            <a
-              href="https://x.com/nataliemarleny"
-              target="_blank"
-              rel="noreferrer"
-              className="hidden text-center text-xs text-muted-foreground hover:text-foreground lg:block"
-            >
-              Follow me <span className="font-medium">@nataliemarleny</span>
-            </a>
           </div>
         </div>
       </div>

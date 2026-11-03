@@ -29,5 +29,5 @@ export function Mermaid({ code }: { code: string }) {
   }, [code, theme])
 
   if (error) return <pre className="whitespace-pre-wrap text-sm text-destructive">{error}</pre>
-  return <div className="not-prose my-6 flex justify-center overflow-x-auto" dangerouslySetInnerHTML={{ __html: svg }} />
+  return <div className="mb-(--u) flex justify-center overflow-x-auto" dangerouslySetInnerHTML={{ __html: svg }} />
 }

@@ -34,7 +34,7 @@ export function SettingsMenu({ settings, onChange, side, align }: Props) {
                 type="button"
                 onClick={() => onChange({ font: f })}
                 className={cn(
-                  'rounded-[5px] py-1 transition-colors',
+                  'rounded-sm py-1 transition-colors',
                   FONTS[f],
                   settings.font === f ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
                 )}
