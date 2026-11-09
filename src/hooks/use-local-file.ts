@@ -168,7 +168,14 @@ export function useLocalFile() {
         } else setPending(location.hash.slice(1))
       })
       .catch(() => {})
-  }, [openPath])
+      // installed PWA: files opened from the OS arrive here; wait for the root so their path resolves
+      .finally(() =>
+        window.launchQueue?.setConsumer(({ files }) => {
+          const h = files[0]
+          if (h?.kind === 'file') void select(h as FileSystemFileHandle).catch(fail)
+        }),
+      )
+  }, [openPath, select, fail])
 
   // Back/forward: follow the URL hash.
   useEffect(() => {

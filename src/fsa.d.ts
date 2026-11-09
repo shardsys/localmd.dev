@@ -5,6 +5,8 @@ interface FileSystemHandle {
   requestPermission(d?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>
 }
 interface Window {
+  // File Handling API (installed PWAs)
+  launchQueue?: { setConsumer(cb: (p: { files: FileSystemHandle[] }) => void): void }
   showOpenFilePicker(o?: {
     multiple?: boolean
     excludeAcceptAllOption?: boolean

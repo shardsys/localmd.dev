@@ -7,14 +7,21 @@ import appCss from '../styles.css?url'
 const INIT_SCRIPT =
   '(function(){try{var c=document.documentElement.classList;var t=localStorage.getItem("localmd-theme");if(t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches))c.add("dark");if(localStorage.getItem("localmd-collapsed")==="1")c.add("collapsed")}catch(e){}})()'
 
+// Offline shell; skipped in dev so the worker never caches HMR modules.
+const SW_SCRIPT = 'if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(function(){})'
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'localmd' },
+      { name: 'theme-color', content: '#25292e' },
     ],
     links: [
+      { rel: 'manifest', href: '/manifest.webmanifest' },
+      { rel: 'icon', href: '/icon.svg', type: 'image/svg+xml' },
+      { rel: 'apple-touch-icon', href: '/icon-192.png' },
       { rel: 'stylesheet', href: appCss },
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
       { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
@@ -35,6 +42,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <ThemeProvider>{children}</ThemeProvider>
         <Scripts />
+        {import.meta.env.PROD && <script dangerouslySetInnerHTML={{ __html: SW_SCRIPT }} />}
       </body>
     </html>
   )

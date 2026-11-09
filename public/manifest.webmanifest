@@ -1,0 +1,19 @@
+{
+  "name": "localmd",
+  "short_name": "localmd",
+  "description": "Open a Markdown file from your machine and see it rendered as you write.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#25292e",
+  "theme_color": "#25292e",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "file_handlers": [
+    { "action": "/", "accept": { "text/markdown": [".md", ".markdown"] } }
+  ],
+  "launch_handler": { "client_mode": "focus-existing" }
+}
